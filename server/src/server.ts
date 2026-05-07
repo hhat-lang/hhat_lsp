@@ -58,6 +58,22 @@ const TYPES: KnownSymbol[] = [
 
 const ALL_KNOWN: KnownSymbol[] = [...KEYWORDS_AND_BUILTINS, ...TYPES];
 
+function collectDeclaredVariableTypes(text: string): Map<string, string> {
+  const declared = new Map<string, string>();
+  const declarationWithType = /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*:\s*([a-zA-Z_][a-zA-Z0-9_]*)/g;
+
+  let match: RegExpExecArray | null;
+  while ((match = declarationWithType.exec(text)) !== null) {
+    const variableName = match[1];
+    const typeName = match[2];
+    if (variableName && typeName) {
+      declared.set(variableName, typeName);
+    }
+  }
+
+  return declared;
+}
+
 connection.onInitialize((params: InitializeParams): InitializeResult => {
   const result: InitializeResult = {
     capabilities: {
@@ -112,14 +128,28 @@ connection.onHover((params): Hover | null => {
   }
 
   const known = ALL_KNOWN.find((k) => k.label === word);
-  if (!known) {
+  if (known) {
+    return {
+      contents: {
+        kind: MarkupKind.Markdown,
+        value: `**${known.label}**\n\n${known.documentation}\n`,
+      },
+    };
+  }
+
+  const declaredVariableTypes = collectDeclaredVariableTypes(text);
+  const declaredType = declaredVariableTypes.get(word);
+  if (!declaredType) {
     return null;
   }
+
+  const knownType = TYPES.find((t) => t.label === declaredType);
+  const typeDoc = knownType ? `\n\n${knownType.documentation}\n` : '\n';
 
   return {
     contents: {
       kind: MarkupKind.Markdown,
-      value: `**${known.label}**\n\n${known.documentation}\n`,
+      value: `**${word}**: \`${declaredType}\`${typeDoc}`,
     },
   };
 });

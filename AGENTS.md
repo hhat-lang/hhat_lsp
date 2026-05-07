@@ -45,6 +45,7 @@ Implemented in [`server/src/server.ts`](server/src/server.ts):
 
 - **Text sync**: incremental.
 - **Completion** and **hover** for symbols in `ALL_KNOWN`: `main`, `print`, numeric types `i8`, `i16`, `i32`, `i64`, `u8`, `u16`, `u32`, `u64`, `f32`, `f64`, and `string`.
+- **Hover** for declared variables of the form `name: type` (shows the declared type when hovering `name`).
 - **Diagnostics**:
   - Information if the file does not contain a `main {` block.
   - Warning on **unknown types** in declarations of the form `name: type` (type not in the known list above).
