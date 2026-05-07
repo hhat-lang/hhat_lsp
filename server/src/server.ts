@@ -17,6 +17,10 @@ import {
 //* TextDocument imports
 import { TextDocument } from 'vscode-languageserver-textdocument';
 
+//* Parser imports
+import { parse } from './parser';
+import type { ParseDiagnostic, DeclarationNode, StatementNode } from './parser';
+
 const connection = createConnection(ProposedFeatures.all);
 const documents = new TextDocuments(TextDocument);
 
@@ -31,13 +35,73 @@ const KEYWORDS_AND_BUILTINS: KnownSymbol[] = [
   {
     label: 'main',
     detail: 'Entry block',
-    documentation: 'Entry point. Defines the main block that runs when the program starts. Syntax: `main { ... }`.',
+    documentation: 'Entry point. Defines the main block that runs when the program starts.\n\n```hhatq\nmain {\n  // ...\n}\n```',
     kind: CompletionItemKind.Keyword,
+  },
+  {
+    label: 'fn',
+    detail: 'Function definition',
+    documentation: 'Defines a function.\n\n```hhatq\nfn add(a:i32 b:i32) i32 {\n  :: a\n}\n```',
+    kind: CompletionItemKind.Keyword,
+  },
+  {
+    label: 'metafn',
+    detail: 'Meta-function definition',
+    documentation: 'Defines a meta-function with named options.\n\n```hhatq\nmetafn measure(q:Qubit) Result {\n  basis: Z\n}\n```',
+    kind: CompletionItemKind.Keyword,
+  },
+  {
+    label: 'modifier',
+    detail: 'Modifier definition',
+    documentation: 'Defines a modifier that transforms a value.\n\n```hhatq\nmodifier double(self x:i32) i32 {\n  :: self\n}\n```',
+    kind: CompletionItemKind.Keyword,
+  },
+  {
+    label: 'super-type',
+    detail: 'Super-type definition',
+    documentation: 'Defines a super-type that groups related types.\n\n```hhatq\nsuper-type Number {\n  i32\n  f64\n}\n```',
+    kind: CompletionItemKind.Keyword,
+  },
+  {
+    label: 'type',
+    detail: 'Type definition',
+    documentation: 'Defines a struct or enum type.\n\n```hhatq\ntype Point {\n  x:f64\n  y:f64\n}\n```',
+    kind: CompletionItemKind.Keyword,
+  },
+  {
+    label: 'const',
+    detail: 'Constant declaration',
+    documentation: 'Declares a compile-time constant.\n\n```hhatq\nconst PI:f64 = 3.14159\n```',
+    kind: CompletionItemKind.Keyword,
+  },
+  {
+    label: 'use',
+    detail: 'Import block',
+    documentation: 'Imports functions, types, and other symbols.\n\n```hhatq\nuse (\n  fn: math.sqrt\n  type: physics.Particle\n)\n```',
+    kind: CompletionItemKind.Keyword,
+  },
+  {
+    label: 'true',
+    detail: 'Boolean literal',
+    documentation: 'Boolean true value.',
+    kind: CompletionItemKind.Constant,
+  },
+  {
+    label: 'false',
+    detail: 'Boolean literal',
+    documentation: 'Boolean false value.',
+    kind: CompletionItemKind.Constant,
+  },
+  {
+    label: 'self',
+    detail: 'Self reference',
+    documentation: 'References the receiver in a modifier definition.',
+    kind: CompletionItemKind.Variable,
   },
   {
     label: 'print',
     detail: 'Built-in function',
-    documentation: 'Prints a value. Example: `print(x)`.',
+    documentation: 'Prints a value to standard output.\n\n```hhatq\nprint(x)\n```',
     kind: CompletionItemKind.Function,
   },
 ];
@@ -154,38 +218,61 @@ connection.onHover((params): Hover | null => {
   };
 });
 
+const LSP_SEVERITY_MAP: Record<ParseDiagnostic['severity'], DiagnosticSeverity> = {
+  error: DiagnosticSeverity.Error,
+  warning: DiagnosticSeverity.Warning,
+  info: DiagnosticSeverity.Information,
+};
+
+const KNOWN_TYPES = new Set(['i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64', 'f32', 'f64']);
+
 function validateTextDocument(textDocument: TextDocument): void {
   const text = textDocument.getText();
+  const result = parse(text);
   const diagnostics: Diagnostic[] = [];
 
-  if (!/\bmain\s*\{/.test(text)) {
+  for (const d of result.diagnostics) {
     diagnostics.push({
-      severity: DiagnosticSeverity.Information,
-      range: { start: { line: 0, character: 0 }, end: { line: 0, character: 0 } },
-      message: 'H-hat programs should have a main block: main { ... }',
+      severity: LSP_SEVERITY_MAP[d.severity],
+      range: {
+        start: { line: d.range.start.line, character: d.range.start.column },
+        end: { line: d.range.end.line, character: d.range.end.column },
+      },
+      message: d.message,
       source: 'hhat',
     });
   }
 
-  const knownTypes = TYPES.map((t) => t.label);
-  const declarationWithType = /\b[a-zA-Z_][a-zA-Z0-9_]*\s*:\s*([a-zA-Z_][a-zA-Z0-9_]*)/g;
-  let match: RegExpExecArray | null;
-  while ((match = declarationWithType.exec(text)) !== null) {
-    const typeName = match[1];
-    if (!knownTypes.includes(typeName)) {
-      const typeStart = match.index + (match[0].length - typeName.length);
-      const start = textDocument.positionAt(typeStart);
-      const end = textDocument.positionAt(typeStart + typeName.length);
-      diagnostics.push({
-        severity: DiagnosticSeverity.Warning,
-        range: { start, end },
-        message: `Unknown type "${typeName}". Known types: ${knownTypes.join(', ')}.`,
-        source: 'hhat',
-      });
+  // Semantic check: unknown types on declarations (grammar does not enforce type validity)
+  if (result.ast?.main) {
+    checkUnknownTypes(result.ast.main.body, diagnostics);
+  }
+  for (const def of result.ast?.definitions ?? []) {
+    if (def.type === 'FunctionDef') {
+      checkUnknownTypes(def.body, diagnostics);
     }
   }
 
   connection.sendDiagnostics({ uri: textDocument.uri, diagnostics });
+}
+
+function checkUnknownTypes(statements: StatementNode[], diagnostics: Diagnostic[]): void {
+  for (const stmt of statements) {
+    if (stmt.type !== 'Declaration') continue;
+    const decl = stmt as DeclarationNode;
+    const typeName = decl.typeAnnotation.name;
+    if (!KNOWN_TYPES.has(typeName)) {
+      diagnostics.push({
+        severity: DiagnosticSeverity.Warning,
+        range: {
+          start: { line: decl.typeAnnotation.range.start.line, character: decl.typeAnnotation.range.start.column },
+          end: { line: decl.typeAnnotation.range.end.line, character: decl.typeAnnotation.range.end.column },
+        },
+        message: `Unknown type "${typeName}". Known types: ${[...KNOWN_TYPES].join(', ')}.`,
+        source: 'hhat',
+      });
+    }
+  }
 }
 
 function getWordAt(text: string, offset: number): string | null {
