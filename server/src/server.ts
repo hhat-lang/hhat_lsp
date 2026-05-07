@@ -53,6 +53,7 @@ const TYPES: KnownSymbol[] = [
   { label: 'u64', detail: '64-bit unsigned integer', documentation: 'Unsigned 64-bit integer type.', kind: CompletionItemKind.TypeParameter },
   { label: 'f32', detail: '32-bit float', documentation: '32-bit floating-point type.', kind: CompletionItemKind.TypeParameter },
   { label: 'f64', detail: '64-bit float', documentation: '64-bit floating-point type.', kind: CompletionItemKind.TypeParameter },
+  { label: 'string', detail: 'String type', documentation: 'UTF-8 text value, written between double quotes. Example: `name: string = "Ada"`.', kind: CompletionItemKind.TypeParameter },
 ];
 
 const ALL_KNOWN: KnownSymbol[] = [...KEYWORDS_AND_BUILTINS, ...TYPES];
@@ -136,7 +137,7 @@ function validateTextDocument(textDocument: TextDocument): void {
     });
   }
 
-  const knownTypes = ['i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64', 'f32', 'f64'];
+  const knownTypes = TYPES.map((t) => t.label);
   const declarationWithType = /\b[a-zA-Z_][a-zA-Z0-9_]*\s*:\s*([a-zA-Z_][a-zA-Z0-9_]*)/g;
   let match: RegExpExecArray | null;
   while ((match = declarationWithType.exec(text)) !== null) {

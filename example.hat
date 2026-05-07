@@ -7,4 +7,6 @@ main {
   z:u64
   z = 42
   print(z)
+  s:string = "hello"
+  print(s)
 }

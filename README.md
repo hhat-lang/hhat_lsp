@@ -39,11 +39,12 @@ npm run build
   - Open **Output** panel
   - Select **H-hat Quantum Language Server** (or **Log (Extension Host)**) and confirm there are no startup errors
 - **Test completion**:
-  - Type `H` or `CNOT` and use `Ctrl+Space`
+  - Type `main`, `print`, or a type such as `i32` and use `Ctrl+Space` (see [AGENTS.md](AGENTS.md) for the full symbol list)
 - **Test hover**:
-  - Hover `H`, `CNOT`, `qubit`, or `measure`
+  - Hover `main`, `print`, or a known type (e.g. `i32`, `u64`)
 - **Test diagnostics**:
-  - Type the word `collapse` anywhere in the file and confirm a warning appears
+  - Remove any `main { ... }` block and confirm an information diagnostic suggests adding one
+  - Add a declaration with an unknown type, e.g. `x: unknownType`, and confirm a warning on the type name
 
 ### Packaging (VSIX)
 
