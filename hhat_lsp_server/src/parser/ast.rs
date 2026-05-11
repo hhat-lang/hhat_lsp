@@ -483,13 +483,70 @@ pub struct SuperTypeDef {
 }
 
 
+#[derive(Clone, Debug, PartialEq)]
+pub enum TypeDef {
+    TypeStruct(TypeStruct),
+    TypeEnum(TypeEnum),
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypeStruct {
+    pub name: Spanned<SimpleId>,
+    pub members: Vec<StructMember>,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct StructMember {
+    pub member_name: Spanned<SimpleId>,
+    pub ty: Spanned<TypeId>,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypeEnum {
+    pub name: Spanned<SimpleId>,
+    pub variants: Vec<Spanned<EnumVariants>>,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum EnumVariants {
+    Named(SimpleId),
+    TaggedUnion(TypeStruct),
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ConstDef {
+    pub name: Spanned<SimpleId>,
+    pub ty: Spanned<TypeId>,
+    pub value: Spanned<Expr>,
+}
+
+
 /*-------------
     Program
 -------------*/
 
 #[derive(Clone, Debug, PartialEq)]
-pub struct Program {
+pub struct FnProgram {
     pub imports: Vec<Imports>,
     pub group_fns: Vec<GroupFns>,
     pub main: Option<Body>,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct TypeProgram {
+    pub imports: Vec<Imports>,
+    pub type_def: Vec<TypeDef>,
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub struct ConstProgram {
+    pub imports: Vec<Imports>,
+    pub const_def: Vec<ConstDef>,
 }
