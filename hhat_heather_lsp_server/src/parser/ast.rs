@@ -2,19 +2,18 @@
 //!
 
 #[allow(dead_code)]
-
 use std::ops::Range;
-use std::vec::IntoIter;
+use std::slice::Iter;
 
-
-fn is_quantum(value: &String) -> bool { value.starts_with(&"@") }
+fn is_quantum(value: &String) -> bool {
+    value.starts_with(&"@")
+}
 
 pub trait TokenValue {
     type Output;
 
     fn new(value: String) -> Self::Output;
 }
-
 
 pub type Span = Range<usize>;
 
@@ -26,21 +25,21 @@ pub struct SimpleId {
     pub is_quantum: bool,
 }
 
-
 impl TokenValue for SimpleId {
     type Output = Self;
 
     fn new(value: String) -> Self {
-        Self { is_quantum: is_quantum(&value), value }
+        Self {
+            is_quantum: is_quantum(&value),
+            value,
+        }
     }
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CompositeId {
     pub members: Vec<Spanned<SimpleId>>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum IdKind {
@@ -48,13 +47,11 @@ pub enum IdKind {
     CompositeId(CompositeId),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct FullId {
     pub id: Spanned<IdKind>,
-    pub modifier: Option<Spanned<Modifier>>
+    pub modifier: Option<Spanned<Modifier>>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Modifier {
@@ -64,20 +61,17 @@ pub enum Modifier {
     Values(Vec<ModifierValues>),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum ModifierValues {
     CallArgs(Spanned<CallArgs>),
     SimpleId(Spanned<SimpleId>),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct CallArgs {
     pub id: Spanned<FullId>,
     pub value: Spanned<ValOnly>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ValOnly {
@@ -86,7 +80,6 @@ pub enum ValOnly {
     Literal(Spanned<Literal>),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum ArrayElem {
     Literal(Spanned<Literal>),
@@ -94,13 +87,11 @@ pub enum ArrayElem {
     FullId(Spanned<FullId>),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Literal {
     pub value: LiteralOptions,
     pub modifier: Option<Modifier>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum LiteralOptions {
@@ -109,7 +100,6 @@ pub enum LiteralOptions {
     Float(FloatLit),
     Str(StrLit),
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct BoolLit {
@@ -121,10 +111,12 @@ impl TokenValue for BoolLit {
     type Output = Self;
 
     fn new(value: String) -> Self::Output {
-        Self { is_quantum: is_quantum(&value), value }
+        Self {
+            is_quantum: is_quantum(&value),
+            value,
+        }
     }
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct IntLit {
@@ -136,10 +128,12 @@ impl TokenValue for IntLit {
     type Output = Self;
 
     fn new(value: String) -> Self::Output {
-        Self { is_quantum: is_quantum(&value), value }
+        Self {
+            is_quantum: is_quantum(&value),
+            value,
+        }
     }
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FloatLit {
@@ -151,10 +145,12 @@ impl TokenValue for FloatLit {
     type Output = Self;
 
     fn new(value: String) -> Self::Output {
-        Self { is_quantum: is_quantum(&value), value }
+        Self {
+            is_quantum: is_quantum(&value),
+            value,
+        }
     }
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StrLit {
@@ -166,15 +162,17 @@ impl TokenValue for StrLit {
     type Output = Self;
 
     fn new(value: String) -> Self::Output {
-        Self { is_quantum: is_quantum(&value), value }
+        Self {
+            is_quantum: is_quantum(&value),
+            value,
+        }
     }
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CompositeIdWithClosure {
     pub root: Spanned<FullId>,
-    pub children: Vec<Spanned<CompositeIdOptions>>
+    pub children: Vec<Spanned<CompositeIdOptions>>,
 }
 
 #[derive(Clone, Debug, PartialEq)]
@@ -182,7 +180,6 @@ pub enum CompositeIdOptions {
     CompositeIdWithClosure(Spanned<CompositeIdWithClosure>),
     FullId(Spanned<FullId>),
 }
-
 
 /*------------
     Imports
@@ -198,13 +195,11 @@ pub enum Imports {
     ConstImport(Vec<Spanned<ImportElem>>),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum ImportElem {
     SingleImport(FullId),
     ManyImports(CompositeIdWithClosure),
 }
-
 
 /*-------------
     Closures
@@ -218,7 +213,6 @@ pub enum GroupFns {
     SuperTypeDef(SuperTypeDef),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct FnDef {
     pub name: Spanned<SimpleId>,
@@ -227,12 +221,10 @@ pub struct FnDef {
     pub body: Spanned<FnBody>,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct FnArgs {
     pub args: Vec<Spanned<ArgType>>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ArgType {
@@ -240,13 +232,11 @@ pub struct ArgType {
     pub value: Spanned<TypeId>,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeId {
     Single(FullId),
     Array(FullId),
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FnBody {
@@ -254,17 +244,18 @@ pub struct FnBody {
 }
 
 impl FnBody {
-    pub fn new() -> Self { Self { body: vec![] } }
+    pub fn new() -> Self {
+        Self { body: vec![] }
+    }
 
     pub fn push(&mut self, value: FnBodyOptions) {
         self.body.push(value)
     }
 
-    pub fn into_iter(self) -> IntoIter<FnBodyOptions> {
-        self.body.into_iter()
+    pub fn iter(&'_ self) -> Iter<'_, FnBodyOptions> {
+        self.body.iter()
     }
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum FnBodyOptions {
@@ -276,7 +267,6 @@ pub enum FnBodyOptions {
     Assign(Assign),
     Expr(Expr),
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Expr {
@@ -291,13 +281,11 @@ pub enum Expr {
     Literal(Spanned<Literal>),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Cast {
     pub data: CastFromData,
     pub to_ty: Spanned<TypeId>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum CastFromData {
@@ -307,13 +295,11 @@ pub enum CastFromData {
     FullId(Spanned<FullId>),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct AssignDS {
     pub root: Spanned<FullId>,
     pub members: Spanned<MemberAssign>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum MemberAssign {
@@ -321,13 +307,11 @@ pub enum MemberAssign {
     Expr(Vec<Expr>),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Assign {
     pub value: Spanned<FullId>,
     pub expr: Spanned<Expr>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CallOptn {
@@ -335,13 +319,11 @@ pub struct CallOptn {
     pub options: Vec<Spanned<Options>>,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Options {
     pub entry: Spanned<Expr>,
     pub body: Spanned<Body>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Call {
@@ -349,7 +331,6 @@ pub struct Call {
     pub args: Vec<Spanned<Args>>,
     pub modifier: Option<Spanned<Modifier>>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum Args {
@@ -359,14 +340,12 @@ pub enum Args {
     ValOnly(ValOnly),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct CallOptbdn {
     pub value: Spanned<FullId>,
     pub args: Vec<Spanned<Args>>,
     pub options: Vec<Spanned<Options>>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct CallBdn {
@@ -375,24 +354,24 @@ pub struct CallBdn {
     pub body: Spanned<Body>,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct Body {
     value: Vec<BodyStmt>,
 }
 
 impl Body {
-    pub fn new() -> Self { Self { value: vec![] } }
+    pub fn new() -> Self {
+        Self { value: vec![] }
+    }
 
     pub fn push(&mut self, value: BodyStmt) {
         self.value.push(value)
     }
 
-    pub fn into_iter(self) -> IntoIter<BodyStmt> {
-        self.value.into_iter()
+    pub fn iter(&'_ self) -> Iter<'_, BodyStmt> {
+        self.value.iter()
     }
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct Declare {
@@ -400,7 +379,6 @@ pub struct Declare {
     pub modifier: Option<Spanned<Modifier>>,
     pub ty: Spanned<TypeId>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct DeclareAssign {
@@ -410,7 +388,6 @@ pub struct DeclareAssign {
     pub expr: Spanned<Expr>,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct DeclareAssignDS {
     pub value: Spanned<SimpleId>,
@@ -418,7 +395,6 @@ pub struct DeclareAssignDS {
     pub ty: Spanned<TypeId>,
     pub members: Vec<Spanned<Assign>>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum BodyStmt {
@@ -429,7 +405,6 @@ pub enum BodyStmt {
     Expr(Expr),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct MetaFnDef {
     pub value: Spanned<SimpleId>,
@@ -438,12 +413,10 @@ pub struct MetaFnDef {
     pub body: Spanned<MetaFnBody>,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct MetaFnBody {
     body: Vec<MetaFnBodyStmt>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum MetaFnBodyStmt {
@@ -457,7 +430,6 @@ pub enum MetaFnBodyStmt {
     Expr(Expr),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct ModifierDef {
     pub value: Spanned<ModifierName>,
@@ -465,7 +437,6 @@ pub struct ModifierDef {
     pub ty: Spanned<TypeId>,
     pub body: Spanned<MetaFnBody>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum ModifierName {
@@ -475,13 +446,11 @@ pub enum ModifierName {
     SimpleId(SimpleId),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct SuperTypeDef {
     pub value: Spanned<SimpleId>,
     pub body: Vec<Spanned<FullId>>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum TypeDef {
@@ -489,13 +458,11 @@ pub enum TypeDef {
     TypeEnum(TypeEnum),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct TypeStruct {
     pub name: Spanned<SimpleId>,
     pub members: Vec<StructMember>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct StructMember {
@@ -503,13 +470,11 @@ pub struct StructMember {
     pub ty: Spanned<TypeId>,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct TypeEnum {
     pub name: Spanned<SimpleId>,
     pub variants: Vec<Spanned<EnumVariants>>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub enum EnumVariants {
@@ -517,14 +482,12 @@ pub enum EnumVariants {
     TaggedUnion(TypeStruct),
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConstDef {
     pub name: Spanned<SimpleId>,
     pub ty: Spanned<TypeId>,
     pub value: Spanned<Expr>,
 }
-
 
 /*-------------
     Program
@@ -537,13 +500,11 @@ pub struct FnProgram {
     pub main: Option<Body>,
 }
 
-
 #[derive(Clone, Debug, PartialEq)]
 pub struct TypeProgram {
     pub imports: Vec<Imports>,
     pub type_def: Vec<TypeDef>,
 }
-
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConstProgram {

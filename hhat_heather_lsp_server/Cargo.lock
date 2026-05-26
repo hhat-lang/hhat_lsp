@@ -292,7 +292,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "hhat_lsp_server"
+name = "hhat_heather_lsp_server"
 version = "0.1.0"
 dependencies = [
  "chumsky",
