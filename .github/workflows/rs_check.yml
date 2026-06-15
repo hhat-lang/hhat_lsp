@@ -1,0 +1,77 @@
+name: Rust Check
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Find Cargo projects
+        id: check
+        run: |
+          if ! command -v rustup > /dev/null 2>&1; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          CARGO_DIRS=$(find . -name Cargo.toml -not -path "*/target/*" -exec dirname {} \; | sort -u | paste -sd ' ')
+          if [ -z "$CARGO_DIRS" ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "cargo_dirs=$CARGO_DIRS" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Setup Rust toolchain
+        if: steps.check.outputs.should_run == 'true'
+        run: |
+          rustup update stable
+          rustup default stable
+          rustup component add clippy rustfmt
+
+      - name: Check
+        if: steps.check.outputs.should_run == 'true'
+        run: |
+          for dir in ${{ steps.check.outputs.cargo_dirs }}; do
+            echo "::group::cargo check ($dir)"
+            cargo check --all-targets --manifest-path "$dir/Cargo.toml"
+            echo "::endgroup::"
+          done
+
+      - name: Clippy
+        if: steps.check.outputs.should_run == 'true'
+        run: |
+          for dir in ${{ steps.check.outputs.cargo_dirs }}; do
+            echo "::group::clippy ($dir)"
+            cargo clippy --all-targets --manifest-path "$dir/Cargo.toml" -- -D warnings
+            echo "::endgroup::"
+          done
+
+      - name: Format check
+        if: steps.check.outputs.should_run == 'true'
+        run: |
+          for dir in ${{ steps.check.outputs.cargo_dirs }}; do
+            echo "::group::fmt check ($dir)"
+            cargo fmt --manifest-path "$dir/Cargo.toml" -- --check
+            echo "::endgroup::"
+          done
+
+      - name: Test
+        if: steps.check.outputs.should_run == 'true'
+        run: |
+          for dir in ${{ steps.check.outputs.cargo_dirs }}; do
+            echo "::group::test ($dir)"
+            cargo test --manifest-path "$dir/Cargo.toml"
+            echo "::endgroup::"
+          done
