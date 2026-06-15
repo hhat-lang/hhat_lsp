@@ -54,7 +54,7 @@ This repository uses MIT license for its code.
 ## Generative AI/LLM Disclaimer
 
 
-The authors are responsible for the code generated, to truthfully report any usage of generative AI/LLM (see []()). Also, check the [Contributing page](CONTRIBUTING.md).
+The authors are responsible for the code generated, to truthfully report any usage of generative AI/LLM (see [Pull Request Template](.github/pull_request_template.md)). Also, check the [Contributing page](CONTRIBUTING.md).
 
 
 ## How to Contribute

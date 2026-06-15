@@ -1,9 +1,9 @@
 //! AST following the grammar files.
 //!
 
-#[allow(dead_code)]
 use std::ops::Range;
 use std::slice::Iter;
+use crate::misc::{ASTKind, FileKind};
 
 fn is_quantum(value: &String) -> bool {
     value.starts_with(&"@")
@@ -500,14 +500,42 @@ pub struct FnProgram {
     pub main: Option<Body>,
 }
 
+impl ASTKind for FnProgram {
+}
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct TypeProgram {
     pub imports: Vec<Imports>,
     pub type_def: Vec<TypeDef>,
 }
 
+impl ASTKind for TypeProgram {
+}
+
+
 #[derive(Clone, Debug, PartialEq)]
 pub struct ConstProgram {
     pub imports: Vec<Imports>,
     pub const_def: Vec<ConstDef>,
+}
+
+impl ASTKind for ConstProgram {
+}
+
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ModuleAST {
+    Type(TypeProgram),
+    Const(ConstProgram),
+    Fn(FnProgram),
+}
+
+impl ModuleAST {
+    pub fn kind(&self) -> FileKind {
+        match self {
+            ModuleAST::Type(_) => FileKind::TypeFile,
+            ModuleAST::Const(_) => FileKind::ConstFile,
+            ModuleAST::Fn(_) => FileKind::FnFile,
+        }
+    }
 }
