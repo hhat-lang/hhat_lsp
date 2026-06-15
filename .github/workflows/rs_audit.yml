@@ -1,0 +1,39 @@
+name: Rust Audit
+
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: '0 0 * * 1'
+
+permissions:
+  contents: read
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: hhat_heather_lsp_server
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Check for Cargo.toml
+        id: check
+        run: |
+          if [ -f Cargo.toml ]; then
+            echo "has_cargo=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_cargo=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install cargo-audit
+        if: steps.check.outputs.has_cargo == 'true'
+        run: cargo install cargo-audit
+
+      - name: Run audit
+        if: steps.check.outputs.has_cargo == 'true'
+        run: cargo audit
